@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <title>Home Temperature Monitoring</title>
+  </head>
+  <body>
+    
+    <header>
+      <h1 class="title">Home Temperature Monitoring</h1>
+    </header>
+    
+    <main>
+      
+      <div class="graph-container" data-sensor-id="a4:c1:38:5f:ea:1d" data-sensor-name="Family Room">
+      </div>
+      
+      <div class="graph-container" data-sensor-id="a4:c1:38:04:5f:7f" data-sensor-name="Guest Room">
+      </div>
+
+      <div class="graph-container" data-sensor-id="a4:c1:38:a7:a0:67" data-sensor-name="Stefan's Office">
+      </div>
+
+      <div class="graph-container" data-sensor-id="a4:c1:38:f7:34:84" data-sensor-name="Master Bedroom">
+      </div>
+
+      <div class="graph-container" data-sensor-id="a4:c1:38:58:7d:fa" data-sensor-name="Aura's Office">
+      </div>
+
+      <div class="graph-container" data-sensor-id="a4:c1:38:d4:c3:a3" data-sensor-name="Ella's Room">
+      </div>
+      
+      <footer>
+	<p>❤️ InfluxDB by <a href="https://aiven.io">Aiven</a> and application hosting by <a href="https://digitalocean.com">Digital Ocean</a>. 🍁 Hosted in Canada.</p>
+	<p>Source code at <a href="https://github.com/st3fan/mijia-hub">github.com/st3fan/mijia-hub</a> and <a href="https://github.com/st3fan/mijia-service">github.com/st3fan/mijia-frontend</a></p>
+      </footer>
+      
+    </main>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>
+      const setupGraph = (graph) => {
+	  const sensorId = graph.dataset.sensorId;
+	  const sensorName = graph.dataset.sensorName;
+	  
+	  fetch(`/data/${sensorId}`)
+	      .then( response => {
+		  if (response.status !== 200) {
+		      console.log(response);
+		  }
+		  return response;
+	      })
+	      .then(response => response.json())
+	      .then(parsedResponse => {
+		  const unpackData = (arr, key) => {
+		      return arr.map(obj => obj[key])
+		  }
+		  const firstTrace = {
+		      type: 'scatter',
+		      mode: 'lines',
+		      name: 'Mean Temperature Usage',
+		      x: parsedResponse.results[0].series[0].values.map(o => o[0]),
+		      y: parsedResponse.results[0].series[0].values.map(o => o[1]),
+		      line: {color: '#17BECF', shape: 'spline', smoothing: 1 }
+		  }
+		  const data = [firstTrace];
+		  const layout = {
+		      title: `${sensorName} Temperature (Last 48 hours)`,
+		      xaxis: {
+			  showticklabels: false,
+		      }
+		  };
+		  return Plotly.newPlot(graph, data, layout);
+	      })
+	      .catch( error => console.log(error) );
+      };
+      
+      const initialize = () => {
+	  for (const graph of document.getElementsByClassName('graph-container')) {
+	      setupGraph(graph);
+	  }
+      };
+
+      $(window).on('load', initialize);
+    </script>
+  </body>
+</html>
+
